@@ -31,10 +31,10 @@ EditorSettings:
   m_SerializeInlineMappingsOnOneLine: 1
   m_DisableCookiesInLightmapper: 0
   m_AssetPipelineMode: 1
-  m_CacheServerMode: 0
-  m_CacheServerEndpoint: 
+  m_CacheServerMode: 2
+  m_CacheServerEndpoint: 192.168.0.105
   m_CacheServerNamespacePrefix: default
-  m_CacheServerEnableDownload: 1
+  m_CacheServerEnableDownload: 0
   m_CacheServerEnableUpload: 1
   m_CacheServerEnableAuth: 0
   m_CacheServerEnableTls: 0
