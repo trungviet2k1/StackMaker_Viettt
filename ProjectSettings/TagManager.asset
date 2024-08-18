@@ -6,6 +6,7 @@ TagManager:
   tags:
   - CloseChest
   - OpenChest
+  - Brick
   layers:
   - Default
   - TransparentFX
@@ -18,7 +19,7 @@ TagManager:
   - Line
   - Destination
   - WinPos
-  - 
+  - Push
   - 
   - 
   - 

@@ -1,14 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using static UnityEditor.Experimental.GraphView.GraphView;
 
-public enum Direct
-{
-    None,
-    Forward,
-    Back,
-    Left,
-    Right
-}
+public enum Direct { None, Forward, Back, Left, Right }
 
 public class PlayerController : MonoBehaviour
 {
@@ -25,6 +20,7 @@ public class PlayerController : MonoBehaviour
     public LayerMask lineLayer;
     public LayerMask winPosLayer;
     public LayerMask destinationLayer;
+    public LayerMask pushLayer;
 
     [Header("Environmental Objects")]
     public Transform treasureChest;
@@ -43,15 +39,17 @@ public class PlayerController : MonoBehaviour
     private Transform brickStack;
     private bool isMoving = false;
     private bool particlesActivated = false;
+    private bool hasReachedDestination = false;
+    private ParticleSystem currentParticleSystem;
 
     public HashSet<Vector3> locationPassed = new HashSet<Vector3>();
     public HashSet<Vector3> linePassed = new HashSet<Vector3>();
     public HashSet<GameObject> lineParents = new HashSet<GameObject>();
+    public HashSet<GameObject> pushParents = new HashSet<GameObject>();
 
     void Start()
     {
         OnInit();
-        locationPassed.Add(transform.position);
     }
 
     void Update()
@@ -66,11 +64,41 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void OnInit()
+    public void OnInit()
     {
+        if (brickStack != null)
+        {
+            Destroy(brickStack.gameObject);
+        }
+
         brickStack = new GameObject("BrickStack").transform;
         brickStack.SetParent(transform);
         brickStack.localPosition = Vector3.zero;
+
+        brickCount = 0;
+        isMoving = false;
+        particlesActivated = false;
+        hasReachedDestination = false;
+
+        //Reset animation
+        animator.ResetTrigger("win");
+        animator.SetInteger("renwu", 0);
+        animator.Rebind();
+
+        player.transform.rotation = Quaternion.identity;
+        currentParticleSystem = null;
+
+        locationPassed.Clear();
+        linePassed.Clear();
+        lineParents.Clear();
+        locationPassed.Add(transform.position);
+
+        UpdatePlayerPosition(0f);
+    }
+
+    public void SetParticleSystem(ParticleSystem particleSystem)
+    {
+        currentParticleSystem = particleSystem;
     }
 
     void DetectSwipe()
@@ -100,14 +128,9 @@ public class PlayerController : MonoBehaviour
 
     void SetTargetPosition()
     {
-        if (CheckObjectPosition(transform.position, brickLayer))
-        {
-            HideBrick(transform.position);
-        }
-
         targetPosition = transform.position + moveDirection;
 
-        if (CheckObjectPosition(targetPosition, brickLayer | unBrickLayer | lineLayer | winPosLayer | destinationLayer))
+        if (CheckObjectPosition(targetPosition, brickLayer | unBrickLayer | lineLayer | winPosLayer | destinationLayer | pushLayer))
         {
             isMoving = true;
         }
@@ -121,44 +144,104 @@ public class PlayerController : MonoBehaviour
         {
             transform.position = targetPosition;
 
-            if (CheckObjectPosition(transform.position, destinationLayer))
+            if (!hasReachedDestination)
             {
-                HandleDestinationPoint();
-                animator.SetTrigger("win");
-                return;
+                if (CheckObjectPosition(transform.position, destinationLayer))
+                {
+                    animator.SetTrigger("win");
+                    HandleDestinationPoint();
+                    hasReachedDestination = true;
+                    return;
+                }
+            }
+
+            HandleBrickAndLineInteractions();
+
+            if (brickCount < 1 && CheckObjectPosition(transform.position, lineLayer))
+            {
+                if (moveDirection == Vector3.back || moveDirection == Vector3.left)
+                {
+                    SetTargetPosition();
+                    return;
+                }
+                else
+                {
+                    isMoving = false;
+                    animator.SetInteger("renwu", 0);
+                    return;
+                }
             }
 
             Vector3 nextPosition = targetPosition + moveDirection;
-            HandleBrickAndLineInteractions();
 
-            if (CheckObjectPosition(nextPosition, brickLayer | unBrickLayer | lineLayer | winPosLayer | destinationLayer))
+            if (CheckObjectPosition(nextPosition, brickLayer | unBrickLayer | lineLayer | winPosLayer | destinationLayer | pushLayer))
             {
+                isMoving = true;
                 MovingContinuously();
-                animator.SetInteger("renwu", 1);
+                HandlePushObject();
             }
             else
             {
+                HandleStopAtBrick();
                 isMoving = false;
                 animator.SetInteger("renwu", 0);
             }
         }
     }
 
+    private void HandlePushObject()
+    {
+        if (Physics.Raycast(transform.position + moveDirection, Vector3.down, 5f, pushLayer))
+        {
+            Vector3 newDirection = FindNewDirectionAroundPush();
+            if (newDirection != Vector3.zero)
+            {
+                moveDirection = newDirection;
+                SetTargetPosition();
+                isMoving = true;
+                animator.SetInteger("renwu", 1);
+            }
+        }
+    }
+
+    private Vector3 FindNewDirectionAroundPush()
+    {
+        Vector3[] possibleDirections = new Vector3[] { Vector3.forward, Vector3.back, Vector3.left, Vector3.right };
+
+        foreach (Vector3 direction in possibleDirections)
+        {
+            Vector3 checkPosition = transform.position + direction;
+
+            if (CheckObjectPosition(checkPosition, brickLayer))
+            {
+                return direction;
+            }
+        }
+
+        return Vector3.zero;
+    }
+
+    private void HandleStopAtBrick()
+    {
+        HandleBrickAndLineInteractions();
+        HideBrick(transform.position);
+    }
+
     private void HandleDestinationPoint()
     {
-        if (particlesActivated) return;
+        if (particlesActivated && treasureChest == null) return;
 
         particlesActivated = true;
         ClearBrick();
         ActivateParticleEffects();
+        player.transform.rotation = Quaternion.Euler(0, -145, 0);
+        StartCoroutine(WaitAndLoadNextLevel());
+    }
 
-        if (treasureChest != null)
-        {
-            /*Vector3 directionToTarget = (treasureChest.position - player.transform.position).normalized;
-            Quaternion lookRotation = Quaternion.LookRotation(directionToTarget);
-            float targetYRotation = lookRotation.eulerAngles.y;*/
-            player.transform.rotation = Quaternion.Euler(0, -145, 0);
-        }
+    private IEnumerator WaitAndLoadNextLevel()
+    {
+        yield return new WaitForSeconds(3f);
+        LevelManager.Instance.LoadNextLevel();
     }
 
     private void HandleBrickAndLineInteractions()
@@ -203,8 +286,8 @@ public class PlayerController : MonoBehaviour
     {
         if (brickStack.childCount > 0)
         {
-            isMoving = true;
             targetPosition = targetPosition + moveDirection;
+            animator.SetInteger("renwu", 1);
             HideBrick(transform.position);
         }
     }
@@ -220,8 +303,8 @@ public class PlayerController : MonoBehaviour
                 return true;
             }
         }
-        return Physics.Raycast(position, Vector3.down, 5f, layer);
 
+        return Physics.Raycast(position, Vector3.down, 5f, layer);
     }
 
     void HideBrick(Vector3 position)
@@ -238,19 +321,19 @@ public class PlayerController : MonoBehaviour
         newBrick.transform.SetParent(brickStack, true);
 
         float yOffset = (brickStack.childCount - 1) * brickHeight;
-        newBrick.transform.localPosition = new Vector3(0, yOffset, 0);
+        newBrick.transform.localPosition = new Vector3(0, yOffset - brickHeight, 0);
 
-        UpdatePlayerPosition(yOffset + brickHeight);
+        UpdatePlayerPosition(yOffset);
     }
 
     void RemoveBrick()
     {
-        if (brickStack.childCount > 0)
+        if (brickStack.childCount > 1)
         {
             Destroy(brickStack.GetChild(0).gameObject);
             RestoreLineObjects();
             UpdateBrickStackPosition();
-            UpdatePlayerPosition((brickStack.childCount - 1) * brickHeight);
+            UpdatePlayerPosition(((brickStack.childCount - 1) * brickHeight) - brickHeight);
         }
     }
 
@@ -283,14 +366,14 @@ public class PlayerController : MonoBehaviour
         {
             Transform brick = brickStack.GetChild(i);
             float yOffset = (i - 1) * brickHeight;
-            brick.localPosition = new Vector3(0, yOffset, 0);
+            brick.localPosition = new Vector3(0, yOffset - brickHeight, 0);
         }
     }
 
     void ActivateParticleEffects()
     {
-        yanchen1?.Play();
-        yanchen2?.Play();
+        if (currentParticleSystem == null) return;
+        currentParticleSystem.Play();
     }
 
     void UpdatePlayerPosition(float yOffset)
