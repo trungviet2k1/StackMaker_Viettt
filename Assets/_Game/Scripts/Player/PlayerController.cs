@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using static UnityEditor.Experimental.GraphView.GraphView;
 
 public enum Direct { None, Forward, Back, Left, Right }
 
@@ -115,6 +113,7 @@ public class PlayerController : MonoBehaviour
             if (moveDirection != Vector3.zero)
             {
                 SetTargetPosition();
+                UIManager.Instance.retryButton.gameObject.SetActive(true);
             }
         }
     }
@@ -235,13 +234,7 @@ public class PlayerController : MonoBehaviour
         ClearBrick();
         ActivateParticleEffects();
         player.transform.rotation = Quaternion.Euler(0, -145, 0);
-        StartCoroutine(WaitAndLoadNextLevel());
-    }
-
-    private IEnumerator WaitAndLoadNextLevel()
-    {
-        yield return new WaitForSeconds(3f);
-        LevelManager.Instance.LoadNextLevel();
+        UIManager.Instance.ShowCompletePanel();
     }
 
     private void HandleBrickAndLineInteractions()

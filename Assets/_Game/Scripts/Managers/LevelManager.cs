@@ -11,11 +11,13 @@ public class LevelManager : MonoBehaviour
     [Header("Player")]
     public Transform player;
 
-    [Header("Level Text")]
+    [Header("Texts UI")]
     public TextMeshProUGUI levelText;
+    public TextMeshProUGUI coinText;
 
     private GameObject currentLevel;
     private int currentLevelIndex = 0;
+    private int coinValue = 0;
 
     void Awake()
     {
@@ -55,6 +57,8 @@ public class LevelManager : MonoBehaviour
         {
             playerController.OnInit();
         }
+
+        UIManager.Instance.OnInit();
     }
 
     private Vector3 FindFirstBrickPosition()
@@ -73,9 +77,28 @@ public class LevelManager : MonoBehaviour
         return Vector3.zero;
     }
 
+    public void GetCoin()
+    {
+        coinValue += 50;
+        UpdateCoinText();
+    }
+
+    private void UpdateCoinText()
+    {
+        if (coinText != null)
+        {
+            coinText.text = coinValue.ToString();
+        }
+    }
+
     public void LoadNextLevel()
     {
         currentLevelIndex = (currentLevelIndex + 1) % ListLevels.Length;
+        LoadLevel(currentLevelIndex);
+    }
+
+    public void ReloadCurrentLevel()
+    {
         LoadLevel(currentLevelIndex);
     }
 }
