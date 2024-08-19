@@ -26,9 +26,9 @@ public class PlayerController : MonoBehaviour
     public int brickCount = 0;
     public float brickHeight = 0.3f;
 
-    [Header("Particle Systems")]
+    /*[Header("Particle Systems")]
     public ParticleSystem yanchen1;
-    public ParticleSystem yanchen2;
+    public ParticleSystem yanchen2;*/
 
     private Vector2 startTouchPosition;
     private Vector3 moveDirection;
@@ -38,7 +38,8 @@ public class PlayerController : MonoBehaviour
     private bool isMoving = false;
     private bool particlesActivated = false;
     private bool hasReachedDestination = false;
-    private ParticleSystem currentParticleSystem;
+    private ParticleSystem yanchen;
+    private ParticleSystem yanchen1;
 
     public HashSet<Vector3> locationPassed = new HashSet<Vector3>();
     public HashSet<Vector3> linePassed = new HashSet<Vector3>();
@@ -84,7 +85,6 @@ public class PlayerController : MonoBehaviour
         animator.Rebind();
 
         player.transform.rotation = Quaternion.identity;
-        currentParticleSystem = null;
 
         locationPassed.Clear();
         linePassed.Clear();
@@ -94,9 +94,10 @@ public class PlayerController : MonoBehaviour
         UpdatePlayerPosition(0f);
     }
 
-    public void SetParticleSystem(ParticleSystem particleSystem)
+    public void SetParticleSystems(ParticleSystem fYanchen, ParticleSystem sYanchen1)
     {
-        currentParticleSystem = particleSystem;
+        yanchen = fYanchen;
+        yanchen1 = sYanchen1;
     }
 
     void DetectSwipe()
@@ -365,8 +366,8 @@ public class PlayerController : MonoBehaviour
 
     void ActivateParticleEffects()
     {
-        if (currentParticleSystem == null) return;
-        currentParticleSystem.Play();
+        if (yanchen != null) yanchen.Play();
+        if (yanchen1 != null) yanchen1.Play();
     }
 
     void UpdatePlayerPosition(float yOffset)

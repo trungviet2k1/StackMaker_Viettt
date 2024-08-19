@@ -58,7 +58,6 @@ public class UIManager : MonoBehaviour
     {
         LevelManager.Instance.GetCoin();
         StartCoroutine(HandleNextButtonClick());
-        
     }
 
     public void OnRetryButtonClicked()

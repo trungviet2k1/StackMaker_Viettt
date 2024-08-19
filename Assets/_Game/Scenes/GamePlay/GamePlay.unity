@@ -9,7 +9,7 @@ OcclusionCullingSettings:
     smallestHole: 0.25
     backfaceThreshold: 100
   m_SceneGUID: 9fc0d4010bbf28b4594072e72b8655ab
-  m_OcclusionCullingData: {fileID: 36300000, guid: 20b4bb6840bd52d42b253cfb55b2f430, type: 2}
+  m_OcclusionCullingData: {fileID: 36300000, guid: 6d60c277c2a045444a2f973e4afde8c5, type: 2}
 --- !u!104 &2
 RenderSettings:
   m_ObjectHideFlags: 0
@@ -297,8 +297,6 @@ MonoBehaviour:
   brick: {fileID: 1531101969777205, guid: 8aad5fca35890fd4389dabb982d52236, type: 3}
   brickCount: 0
   brickHeight: 0.3
-  yanchen1: {fileID: 7531053265335925095, guid: 88830e79afaa318489cbf7f6ec880f9c, type: 3}
-  yanchen2: {fileID: 1371654048149106523, guid: 69b6b5ad456b2a84981b1adfe893bc05, type: 3}
 --- !u!1 &345027193
 GameObject:
   m_ObjectHideFlags: 0
@@ -1148,7 +1146,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1058291325
 RectTransform:
   m_ObjectHideFlags: 0

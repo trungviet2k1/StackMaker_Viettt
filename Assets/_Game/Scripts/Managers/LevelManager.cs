@@ -56,6 +56,30 @@ public class LevelManager : MonoBehaviour
         if (player.TryGetComponent<PlayerController>(out var playerController))
         {
             playerController.OnInit();
+
+            ParticleSystem[] particles = currentLevel.GetComponentsInChildren<ParticleSystem>();
+            ParticleSystem yanchen = null;
+            ParticleSystem yanchen1 = null;
+
+            foreach (var ps in particles)
+            {
+                if (ps.CompareTag("Congratulations"))
+                {
+                    if (yanchen == null)
+                    {
+                        yanchen = ps;
+                    }
+                    else if (yanchen1 == null)
+                    {
+                        yanchen1 = ps;
+                    }
+                }
+            }
+
+            if (yanchen != null && yanchen1 != null)
+            {
+                playerController.SetParticleSystems(yanchen, yanchen1);
+            }
         }
 
         UIManager.Instance.OnInit();
